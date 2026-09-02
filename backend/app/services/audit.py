@@ -43,7 +43,7 @@ async def log_event(
 
     log.info(
         "audit_event",
-        event=event,
+        audit_event=event,
         payment_id=payment_id,
         action=action,
         result=result,

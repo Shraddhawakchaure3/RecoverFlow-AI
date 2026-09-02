@@ -34,9 +34,9 @@ async def get_dashboard_summary():
     recovered_result = await db.recovery_actions.aggregate(pipeline_recovered).to_list(1)
     recovered = recovered_result[0] if recovered_result else {"total": 0, "count": 0}
 
-    # Expected recoverable (sum of amount * recovery_probability for pending actions)
+    # Expected recoverable: sum of amount_original × recovery_score for all non-blocked, non-stopped actions
     pipeline_expected = [
-        {"$match": {"status": {"$in": ["approved", "pending", "executing"]}}},
+        {"$match": {"status": {"$in": ["success", "failed", "approved", "pending", "executing"]}}},
         {"$group": {
             "_id": None,
             "total": {"$sum": {"$multiply": ["$amount_original", "$recovery_probability"]}},

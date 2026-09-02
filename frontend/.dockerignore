@@ -1,0 +1,11 @@
+# Frontend Docker ignore
+node_modules/
+dist/
+.vite/
+.env
+.env.*
+*.log
+.DS_Store
+README.md
+.vscode/
+.idea/
