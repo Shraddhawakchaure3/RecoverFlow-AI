@@ -1,10 +1,11 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useFetch } from '../hooks/useFetch'
 import { demoApi } from '../services/api'
 import PageHeader from '../components/PageHeader'
 import { formatINR, getStatusBadge } from '../utils/format'
 import {
-  Play, CheckCircle, XCircle, AlertTriangle, Zap, Shield, Copy, RefreshCw
+  Play, CheckCircle, XCircle, AlertTriangle, Zap, Shield, Copy, Brain, LockKeyhole, FileCheck
 } from 'lucide-react'
 
 const SCENARIO_ICONS = {
@@ -55,8 +56,21 @@ export default function DemoScenarios() {
         subtitle="Controlled scenarios that run through the real backend workflow"
       />
 
-      <div className="mb-4 px-3 py-2 rounded text-xs text-[var(--color-warning)] border border-[var(--color-warning)]/20" style={{ background: 'rgba(245,158,11,0.06)' }}>
-        ⚡ Each scenario creates real synthetic data and executes the full DETECT → DIAGNOSE → SCORE → DECIDE → POLICY → EXECUTE pipeline.
+      <div className="demo-intro">
+        <div className="demo-intro-mark"><Zap size={16} /></div>
+        <div>
+          <div className="demo-intro-title">Synthetic workflow lab</div>
+          <div className="demo-intro-copy">Each scenario runs real data through detect, diagnose, score, decision, policy and execution.</div>
+        </div>
+      </div>
+
+      <div className="workflow-strip" aria-label="Recovery workflow">
+        <span className="workflow-step">Detect</span><span className="workflow-arrow">→</span>
+        <span className="workflow-step">Diagnose</span><span className="workflow-arrow">→</span>
+        <span className="workflow-step">Score</span><span className="workflow-arrow">→</span>
+        <span className="workflow-step">Decide</span><span className="workflow-arrow">→</span>
+        <span className="workflow-step">Policy</span><span className="workflow-arrow">→</span>
+        <span className="workflow-step">Recover / Stop</span>
       </div>
 
       {loading ? (
@@ -71,7 +85,7 @@ export default function DemoScenarios() {
             const isRunning = running === scenario.id
 
             return (
-              <div key={scenario.id} className="card p-4">
+              <div key={scenario.id} className={`card demo-card ${result ? 'demo-card-complete' : ''}`}>
                 <div className="flex items-start gap-3 mb-3">
                   <div className="p-2 rounded" style={{ background: `${color}18` }}>
                     <Icon size={16} style={{ color }} />
@@ -110,7 +124,7 @@ export default function DemoScenarios() {
                     >
                       <div className="flex items-center gap-1.5 text-xs font-500" style={{ fontWeight: 500 }}>
                         {result.success ? (
-                          <><CheckCircle size={12} className="text-[var(--color-success)]" /> Recovery Initiated</>
+                          <><CheckCircle size={12} className="text-[var(--color-success)]" /> Recovery Order Created</>
                         ) : result.stopped ? (
                           <><AlertTriangle size={12} className="text-[var(--color-warning)]" /> Stopped</>
                         ) : (
@@ -126,11 +140,25 @@ export default function DemoScenarios() {
 
                     {/* Result details */}
                     <div className="p-3 text-xs space-y-1">
+                      {result.result?.ai_decision && (
+                        <div className="demo-result-grid">
+                          <div className="demo-result-item"><Brain size={13} /><span>AI recommends</span><strong>{result.result.ai_decision.recommended_action}</strong></div>
+                          <div className="demo-result-item"><Shield size={13} /><span>Policy</span><strong>{result.result.policy_status || '—'}</strong></div>
+                          <div className="demo-result-item"><LockKeyhole size={13} /><span>Score</span><strong>{Math.round((result.result.recovery_score || 0) * 100)}%</strong></div>
+                          <div className="demo-result-item"><FileCheck size={13} /><span>Audit</span><strong>Recorded</strong></div>
+                        </div>
+                      )}
                       {result.reason && (
                         <div><span className="text-[var(--color-text-muted)]">Reason: </span>{result.reason}</div>
                       )}
                       {result.result?.result && (
                         <div><span className="text-[var(--color-text-muted)]">Action: </span>{result.result.result}</div>
+                      )}
+                      {result.payment_id && (
+                        <div className="demo-result-links">
+                          <Link to={`/ai-decision/${result.payment_id}`}>Inspect AI Decision →</Link>
+                          <Link to={`/audit?payment_id=${encodeURIComponent(result.payment_id)}`}>View Audit Trail →</Link>
+                        </div>
                       )}
                       {result.result?.razorpay_order_id && (
                         <div><span className="text-[var(--color-text-muted)]">Order: </span>
@@ -141,6 +169,11 @@ export default function DemoScenarios() {
                         <div className="flex items-center gap-1.5">
                           <span className="text-[var(--color-text-muted)]">Status: </span>
                           <span className={`badge ${getStatusBadge(result.result.status)}`}>{result.result.status}</span>
+                        </div>
+                      )}
+                      {result.result?.result && (
+                        <div className="mt-2 pt-2 border-t border-[var(--color-border)] text-[var(--color-text-muted)]">
+                          Outcome: <span className="text-[var(--color-text)]">{result.result.result.replace(/_/g, ' ')}</span>
                         </div>
                       )}
                       {/* Policy checks */}

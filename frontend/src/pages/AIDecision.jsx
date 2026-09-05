@@ -112,9 +112,22 @@ export default function AIDecision() {
   const displayBreakdown = analysisResult
     ? analysis.score_breakdown?.feature_scores
     : opp.score_breakdown?.feature_scores
+  const flowSteps = [
+    { label: 'AI Recommendation', done: Boolean(aiDecision) },
+    { label: 'Policy Checked', done: Boolean(policyDecision) },
+    { label: policyDecision && !policyDecision.approved ? 'Recovery Blocked' : 'Recovery Action', done: Boolean(policyDecision && (!policyDecision.approved || executeResult)) },
+    { label: 'Audit Recorded', done: Boolean(executeResult || opp.audit_trail?.length) },
+  ]
 
   return (
     <div className="fade-in">
+      <div className="workflow-breadcrumb">
+        <Link to="/opportunities">Revenue Opportunities</Link>
+        <span className="workflow-breadcrumb-separator">→</span>
+        <span>{paymentId}</span>
+        <span className="workflow-breadcrumb-separator">→</span>
+        <span>AI Decision</span>
+      </div>
       <PageHeader
         title="AI Decision Center"
         subtitle={`Analyzing payment ${paymentId}`}
@@ -124,6 +137,15 @@ export default function AIDecision() {
           </Link>
         }
       />
+
+      <div className="decision-flow" aria-label="Recovery decision flow">
+        {flowSteps.map((step, index) => (
+          <span key={step.label} className={step.done ? 'decision-flow-complete' : index === 0 ? 'decision-flow-active' : ''}>
+            {step.done ? '✓ ' : '○ '}{step.label}
+            {index < flowSteps.length - 1 && <span className="decision-flow-arrow">→</span>}
+          </span>
+        ))}
+      </div>
 
       <div className="grid grid-cols-3 gap-4">
         {/* Left col — payment + customer */}
@@ -229,7 +251,7 @@ export default function AIDecision() {
                 onClick={handleAnalyze}
                 disabled={analyzing}
               >
-                {analyzing ? <><div className="spinner" style={{ width: 14, height: 14 }} /> Analyzing…</> : <><Brain size={13} /> Analyze with AI</>}
+                {analyzing ? <><div className="spinner" style={{ width: 14, height: 14 }} /> Analyzing…</> : <><Brain size={13} /> Analyze with AI →</>}
               </button>
             </div>
           )}
@@ -242,6 +264,15 @@ export default function AIDecision() {
               reason={policyDecision.reason}
             />
           )}
+
+          <div className="flex flex-wrap gap-2">
+            <Link to={`/policies?payment_id=${encodeURIComponent(paymentId)}`} className="btn btn-secondary btn-sm">
+              View Policy Rules →
+            </Link>
+            <Link to={`/audit?payment_id=${encodeURIComponent(paymentId)}`} className="btn btn-secondary btn-sm">
+              View Audit Trail →
+            </Link>
+          </div>
 
           {/* Execute button */}
           {analysisResult && (

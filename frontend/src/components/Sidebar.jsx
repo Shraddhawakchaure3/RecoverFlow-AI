@@ -3,14 +3,32 @@ import {
   BarChart3, Zap, Brain, FileText, FlaskConical, Play, Shield
 } from 'lucide-react'
 
-const NAV_ITEMS = [
-  { to: '/', icon: BarChart3, label: 'Command Center', end: true },
-  { to: '/opportunities', icon: Zap, label: 'Revenue Opportunities' },
-  { to: '/ai-decision', icon: Brain, label: 'AI Decision' },
-  { to: '/audit', icon: FileText, label: 'Audit Trail' },
-  { to: '/evaluation', icon: FlaskConical, label: 'Evaluation' },
-  { to: '/demo', icon: Play, label: 'Demo Scenarios' },
-  { to: '/policies', icon: Shield, label: 'Policies' },
+const NAV_GROUPS = [
+  {
+    label: 'Overview',
+    items: [{ to: '/', icon: BarChart3, label: 'Command Center', end: true }],
+  },
+  {
+    label: 'Recover',
+    items: [
+      { to: '/opportunities', icon: Zap, label: 'Revenue Opportunities' },
+      { to: '/ai-decision', icon: Brain, label: 'AI Decision' },
+    ],
+  },
+  {
+    label: 'Control',
+    items: [
+      { to: '/policies', icon: Shield, label: 'Policies' },
+      { to: '/audit', icon: FileText, label: 'Audit Trail' },
+    ],
+  },
+  {
+    label: 'Demo & Measure',
+    items: [
+      { to: '/demo', icon: Play, label: 'Demo Scenarios' },
+      { to: '/evaluation', icon: FlaskConical, label: 'Evaluation' },
+    ],
+  },
 ]
 
 export default function Sidebar() {
@@ -31,21 +49,21 @@ export default function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 p-3 space-y-0.5">
-        <div className="text-[10px] font-600 text-[var(--color-text-muted)] uppercase tracking-widest px-3 py-2 mt-1" style={{ fontWeight: 600 }}>
-          Navigation
-        </div>
-        {NAV_ITEMS.map(({ to, icon: Icon, label, end }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={end}
-            className={({ isActive }) =>
-              `nav-item ${isActive ? 'active' : ''}`
-            }
-          >
-            <Icon size={15} />
-            <span>{label}</span>
-          </NavLink>
+        {NAV_GROUPS.map(group => (
+          <div key={group.label} className="nav-group">
+            <div className="nav-group-label">{group.label}</div>
+            {group.items.map(({ to, icon: Icon, label, end }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={end}
+                className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+              >
+                <Icon size={15} />
+                <span>{label}</span>
+              </NavLink>
+            ))}
+          </div>
         ))}
       </nav>
 

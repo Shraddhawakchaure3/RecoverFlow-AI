@@ -226,8 +226,10 @@ async def run_demo_scenario(body: dict):
         metadata={"scenario": scenario.get("name")},
     )
 
+    previous_policy = None
     # ── Policy override for policy_block scenario ─────────────────────────────
     if scenario.get("policy_override"):
+        previous_policy = await db.policies.find_one({"name": "default"})
         await db.policies.update_one(
             {"name": "default"},
             {"$set": {**scenario["policy_override"], "updated_at": datetime.utcnow()}},
@@ -256,3 +258,14 @@ async def run_demo_scenario(body: dict):
     except Exception as e:
         log.error("demo_scenario_error", scenario_id=scenario_id, error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if scenario.get("policy_override"):
+            if previous_policy:
+                previous_policy.pop("_id", None)
+                await db.policies.replace_one(
+                    {"name": "default"},
+                    previous_policy,
+                    upsert=True,
+                )
+            else:
+                await db.policies.delete_one({"name": "default"})

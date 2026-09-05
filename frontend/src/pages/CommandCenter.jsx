@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAutoRefetch } from '../hooks/useFetch'
 import { dashboardApi } from '../services/api'
 import { formatINR, formatPct, getScoreColor } from '../utils/format'
@@ -45,6 +46,39 @@ function CustomTooltip({ active, payload, label }) {
         </div>
       ))}
     </div>
+  )
+}
+
+function Pipeline({ data }) {
+  const processed = (data.active_recovery_actions || 0) + (data.successful_recoveries || 0) +
+    (data.policy_blocked_actions || 0) + (data.stopped_actions || 0)
+  const stages = [
+    { label: 'Failed Payments', value: data.payments_at_risk || 0, tone: 'danger', to: '/opportunities' },
+    { label: 'Analyzed', value: processed, tone: 'primary' },
+    { label: 'Recovery Opportunities', value: data.active_recovery_actions || 0, tone: 'info', to: '/opportunities' },
+    { label: 'Policy Approved', value: (data.active_recovery_actions || 0) + (data.successful_recoveries || 0), tone: 'warning', to: '/policies' },
+    { label: 'Recovered', value: data.successful_recoveries || 0, tone: 'success', to: '/audit' },
+  ]
+
+  return (
+    <section className="pipeline-section">
+      <div className="section-kicker">Revenue Recovery Pipeline</div>
+      <div className="pipeline-track">
+        {stages.map((stage, index) => (
+          <div className="pipeline-stage" key={stage.label}>
+            {stage.to ? (
+              <Link to={stage.to} className="pipeline-link" title={`Open ${stage.label}`}>
+                <div className={`pipeline-node ${stage.tone}`}><span>{stage.value.toLocaleString()}</span></div>
+                <div className="pipeline-label">{stage.label}</div>
+              </Link>
+            ) : (
+              <><div className={`pipeline-node ${stage.tone}`}><span>{stage.value.toLocaleString()}</span></div><div className="pipeline-label">{stage.label}</div></>
+            )}
+            {index < stages.length - 1 && <div className="pipeline-connector" />}
+          </div>
+        ))}
+      </div>
+    </section>
   )
 }
 
@@ -170,6 +204,8 @@ export default function CommandCenter() {
           color="var(--color-warning)"
         />
       </div>
+
+      <Pipeline data={d} />
 
       {/* Charts Row 1 */}
       <div className="grid grid-cols-3 gap-4 mb-4">

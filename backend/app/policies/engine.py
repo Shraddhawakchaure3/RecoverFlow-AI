@@ -92,17 +92,47 @@ async def check_policy(
     if not retry_ok:
         denials.append(f"Retry limit reached: {retry_attempts} ≥ {policy.max_retries}")
 
-    # ── Check 3: Transaction amount limit ────────────────────────────────────
+    # ── Check 3: Total recovery action limit ────────────────────────────────
+    db = get_db()
+    action_count = await db.recovery_actions.count_documents({
+        "payment_id": payment.get("payment_id"),
+        "status": {"$in": ["pending", "approved", "executing", "success", "failed", "blocked", "stopped"]},
+    })
+    actions_ok = action_count < policy.max_recovery_actions
+    checks.append({
+        "check": "Recovery action limit",
+        "passed": actions_ok,
+        "detail": f"{action_count} actions < max {policy.max_recovery_actions}",
+    })
+    if not actions_ok:
+        denials.append(f"Recovery action limit reached: {action_count} ≥ {policy.max_recovery_actions}")
+
+    # ── Check 4: Duplicate action protection ────────────────────────────────
+    duplicate_action = await db.recovery_actions.find_one({
+        "payment_id": payment.get("payment_id"),
+        "action_type": recommended_action,
+        "status": {"$in": ["pending", "approved", "executing", "success"]},
+    })
+    duplicate_ok = duplicate_action is None
+    checks.append({
+        "check": "Duplicate action protection",
+        "passed": duplicate_ok,
+        "detail": "No matching active action" if duplicate_ok else "Matching action already exists",
+    })
+    if not duplicate_ok:
+        denials.append(f"Duplicate recovery action already exists for '{recommended_action}'")
+
+    # ── Check 5: Transaction amount limit ────────────────────────────────────
     amount_ok = amount_inr <= policy.max_transaction_amount
     checks.append({
         "check": "Amount limit",
         "passed": amount_ok,
-        "detail": f"₹{amount_inr:,.0f} {'≤' if amount_ok else '>'} max ₹{policy.max_transaction_amount:,.0f}",
+        "detail": f"Rs {amount_inr:,.0f} {'<=' if amount_ok else '>'} max Rs {policy.max_transaction_amount:,.0f}",
     })
     if not amount_ok:
-        denials.append(f"Transaction amount ₹{amount_inr:,.0f} exceeds policy max ₹{policy.max_transaction_amount:,.0f}")
+        denials.append(f"Transaction amount Rs {amount_inr:,.0f} exceeds policy max Rs {policy.max_transaction_amount:,.0f}")
 
-    # ── Check 4: Customer opt-out ─────────────────────────────────────────────
+    # ── Check 6: Customer opt-out ─────────────────────────────────────────────
     opted_out = customer.get("opted_out", False)
     optout_ok = not (policy.stop_if_customer_optout and opted_out)
     checks.append({
@@ -113,7 +143,7 @@ async def check_policy(
     if not optout_ok:
         denials.append("Customer has opted out of recovery")
 
-    # ── Check 5: Action allowed ───────────────────────────────────────────────
+    # ── Check 7: Action allowed ───────────────────────────────────────────────
     action_ok = recommended_action in policy.allowed_actions or recommended_action == "STOP"
     checks.append({
         "check": "Action permitted",

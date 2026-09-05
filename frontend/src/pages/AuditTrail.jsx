@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useFetch } from '../hooks/useFetch'
 import { auditApi } from '../services/api'
 import { formatDate, getStatusBadge } from '../utils/format'
@@ -7,8 +8,10 @@ import AuditTimeline from '../components/AuditTimeline'
 import { Search } from 'lucide-react'
 
 export default function AuditTrail() {
-  const [paymentFilter, setPaymentFilter] = useState('')
-  const [applied, setApplied] = useState('')
+  const [searchParams] = useSearchParams()
+  const initialPaymentId = searchParams.get('payment_id') || ''
+  const [paymentFilter, setPaymentFilter] = useState(initialPaymentId)
+  const [applied, setApplied] = useState(initialPaymentId)
 
   const { data, loading, error, refetch } = useFetch(
     () => auditApi.getLogs({ payment_id: applied || undefined, limit: 100 }),
@@ -91,7 +94,11 @@ export default function AuditTrail() {
                         </div>
                       </td>
                       <td className="font-mono text-[10px] text-[var(--color-text-muted)]">
-                        {e.payment_id?.slice(0, 12)}…
+                        {e.payment_id ? (
+                          <Link className="text-[var(--color-primary)]" to={`/opportunities/${e.payment_id}`}>
+                            {e.payment_id.slice(0, 12)}…
+                          </Link>
+                        ) : '—'}
                       </td>
                       <td className="text-xs text-[var(--color-text-muted)]">
                         {e.result?.slice(0, 30) || e.action || '—'}

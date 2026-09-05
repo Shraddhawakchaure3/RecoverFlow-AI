@@ -43,7 +43,7 @@ async def log_event(
 
     log.info(
         "audit_event",
-        audit_event=event,
+        audit_event_type=event,
         payment_id=payment_id,
         action=action,
         result=result,
@@ -54,6 +54,6 @@ async def log_event(
         db = get_db()
         await db.audit_logs.insert_one(entry.model_dump())
     except Exception as e:
-        log.error("audit_log_write_failed", error=str(e), event=event)
+        log.error("audit_log_write_failed", error=str(e), audit_event_type=event)
 
     return entry.log_id

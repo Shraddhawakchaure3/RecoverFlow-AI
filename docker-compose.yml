@@ -80,8 +80,6 @@ services:
     environment:
       # Proxy target: in Docker, frontend container proxies API calls to backend container
       VITE_PROXY_TARGET: http://backend:8000
-      # Browser-visible API URL: always localhost from the user's browser
-      VITE_API_URL: http://localhost:8000/api
     depends_on:
       backend:
         condition: service_healthy

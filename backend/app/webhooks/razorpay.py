@@ -12,6 +12,7 @@ from typing import Any
 import structlog
 from fastapi import APIRouter, HTTPException, Request, BackgroundTasks
 from fastapi.responses import JSONResponse
+from pymongo.errors import DuplicateKeyError
 
 from app.config import settings
 from app.database.connection import get_db
@@ -165,9 +166,10 @@ async def razorpay_webhook(
             log.info("webhook_duplicate_ignored", event_id=event_id, event_type=event_type)
             return JSONResponse({"status": "duplicate", "event_id": event_id})
 
-        # Persist event record (mark as not yet processed)
+        # Claim the event before scheduling work so concurrent duplicates cannot
+        # both start recovery processing.
         try:
-            await db.webhook_events.update_one(
+            insert_result = await db.webhook_events.update_one(
                 {"event_id": event_id},
                 {"$setOnInsert": {
                     "event_id": event_id,
@@ -178,8 +180,12 @@ async def razorpay_webhook(
                 }},
                 upsert=True,
             )
-        except Exception:
-            pass  # Duplicate key race condition is fine
+            if not insert_result.upserted_id:
+                log.info("webhook_duplicate_ignored", event_id=event_id, event_type=event_type)
+                return JSONResponse({"status": "duplicate", "event_id": event_id})
+        except DuplicateKeyError:
+            log.info("webhook_duplicate_ignored", event_id=event_id, event_type=event_type)
+            return JSONResponse({"status": "duplicate", "event_id": event_id})
 
     # Respond immediately (Razorpay expects fast response)
     background_tasks.add_task(_process_webhook_event_and_mark, event_id, event_type, payload, db)

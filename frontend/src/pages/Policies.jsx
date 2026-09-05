@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useFetch } from '../hooks/useFetch'
 import { policiesApi } from '../services/api'
 import PageHeader from '../components/PageHeader'
@@ -41,6 +42,8 @@ function PolicyField({ label, description, value, onChange, type = 'number', ste
 }
 
 export default function Policies() {
+  const [searchParams] = useSearchParams()
+  const paymentId = searchParams.get('payment_id')
   const { data, loading, error, refetch } = useFetch(() => policiesApi.get())
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -73,16 +76,25 @@ export default function Policies() {
         onRefresh={refetch}
         loading={loading}
         action={
-          <button
-            className={`btn btn-sm ${saved ? 'btn-success' : 'btn-primary'}`}
-            onClick={handleSave}
-            disabled={saving || !form}
-          >
-            {saving ? <div className="spinner" style={{ width: 13, height: 13 }} /> : <Save size={13} />}
-            {saved ? 'Saved!' : 'Save Policy'}
-          </button>
+          <div className="flex items-center gap-2">
+            <Link to={paymentId ? `/ai-decision/${paymentId}` : '/opportunities'} className="btn btn-secondary btn-sm">
+              {paymentId ? 'Back to AI Decision →' : 'View Recovery Opportunities →'}
+            </Link>
+            <button
+              className={`btn btn-sm ${saved ? 'btn-success' : 'btn-primary'}`}
+              onClick={handleSave}
+              disabled={saving || !form}
+            >
+              {saving ? <div className="spinner" style={{ width: 13, height: 13 }} /> : <Save size={13} />}
+              {saved ? 'Saved!' : 'Save Policy'}
+            </button>
+          </div>
         }
       />
+
+      <div className="policy-context-note">
+        These rules govern whether an AI-generated recovery recommendation can be executed.
+      </div>
 
       <div className="grid grid-cols-2 gap-6">
         {/* Left: Guardrail limits */}

@@ -1,4 +1,5 @@
 import { useFetch } from '../hooks/useFetch'
+import { Link } from 'react-router-dom'
 import { evaluationApi } from '../services/api'
 import { formatINR, formatPct } from '../utils/format'
 import PageHeader from '../components/PageHeader'
@@ -44,6 +45,7 @@ export default function Evaluation() {
   const comparison = d.comparison || {}
   const priority = d.priority_breakdown || {}
   const failureBreakdown = d.failure_type_breakdown || []
+  const revenueDelta = (ai.recovered_inr || 0) - (baseline.estimated_recovered_inr || 0)
 
   // Comparison chart data
   const comparisonData = [
@@ -73,6 +75,7 @@ export default function Evaluation() {
         subtitle={d.label || 'Synthetic evaluation results'}
         onRefresh={refetch}
         loading={loading}
+        action={<Link to="/opportunities" className="btn btn-secondary btn-sm">View Recovery Opportunities →</Link>}
       />
 
       {d.note && (
@@ -149,6 +152,14 @@ export default function Evaluation() {
               value={`${Math.round((ai.recovery_rate || 0) * 100)}%`}
               color="var(--color-success)"
             />
+          </div>
+          <div className={`evaluation-impact ${revenueDelta < 0 ? 'negative' : ''}`}>
+            <TrendingUp size={15} />
+            <span>
+              RecoverFlow AI {revenueDelta >= 0 ? 'recovered' : 'recovered'}{' '}
+              <strong>{formatINR(Math.abs(revenueDelta))}</strong>{' '}
+              {revenueDelta >= 0 ? 'more' : 'less'} revenue than the fixed-retry baseline.
+            </span>
           </div>
         </div>
       </div>

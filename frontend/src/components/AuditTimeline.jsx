@@ -1,4 +1,4 @@
-import { formatDate } from '../utils/format'
+import { formatDate, formatINR } from '../utils/format'
 import { CheckCircle, AlertCircle, Clock, XCircle, Zap, Shield, BarChart3, Play } from 'lucide-react'
 
 const EVENT_ICONS = {
@@ -83,7 +83,7 @@ export default function AuditTimeline({ entries }) {
                     )}
                     {entry.amount_recovered && (
                       <div className="text-xs mt-0.5" style={{ color: 'var(--color-success)' }}>
-                        Recovered: ₹{(entry.amount_recovered / 100).toLocaleString('en-IN')}
+                        Recovered: {formatINR(entry.amount_recovered / 100)}
                       </div>
                     )}
                   </div>
