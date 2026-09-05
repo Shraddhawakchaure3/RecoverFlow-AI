@@ -149,6 +149,22 @@ Available at `/demo` in the UI — each runs the full backend pipeline:
 | Payment Success → Stop | Already captured → recovery cancelled |
 | Policy Block | High amount exceeds `MAX_TRANSACTION_AMOUNT` → blocked |
 
+### Safety Demonstrations
+
+- Successful recovery
+- Low recovery → STOP
+- Retry limit reached
+- Checkout abandonment
+- Duplicate webhook
+- Payment success → STOP
+- AI recommendation → Policy BLOCK
+
+## Demo Workflow
+
+Detect → Diagnose → Score → Gemini AI Decision → Policy Validation → Recovery/Stop → Outcome → Audit → Evaluation
+
+The payment provider uses a Razorpay/Mock abstraction. The demo can run with synthetic data and mock payment execution when Razorpay credentials are unavailable.
+
 ---
 
 ## Project Structure
@@ -284,12 +300,12 @@ All env vars go in `backend/.env` (copy from `backend/.env.example`).
 
 | Variable | Required | Description |
 |---|---|---|
-| `RAZORPAY_KEY_ID` | For live Razorpay | Test mode key from dashboard |
-| `RAZORPAY_KEY_SECRET` | For live Razorpay | Test mode secret |
+| `RAZORPAY_KEY_ID` | Razorpay Test Mode | Test mode key from dashboard |
+| `RAZORPAY_KEY_SECRET` | Razorpay Test Mode | Test mode secret |
 | `RAZORPAY_WEBHOOK_SECRET` | For webhooks | Webhook signature verification |
 | `AI_API_KEY` | For AI agent | Gemini or OpenAI API key |
 | `AI_BASE_URL` | Optional | Defaults to Gemini endpoint |
-| `AI_MODEL` | Optional | Defaults to `gemini-1.5-flash` |
+| `AI_MODEL` | Optional | Defaults to `gemini-3.8-flash` |
 | `MONGODB_URI` | Yes | MongoDB connection string |
 | `FRONTEND_URL` | Yes | CORS origin for frontend |
 | `MAX_RETRIES` | Optional | Policy: max retry attempts (default 2) |
@@ -308,7 +324,7 @@ All env vars go in `backend/.env` (copy from `backend/.env.example`).
 ```
 AI_API_KEY=your-gemini-api-key
 AI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
-AI_MODEL=gemini-1.5-flash
+AI_MODEL=gemini-3.8-flash
 ```
 
 The backend uses the OpenAI SDK pointed at Gemini's OpenAI-compatible endpoint.
@@ -359,7 +375,7 @@ The evaluation compares two strategies on the same dataset:
 **Baseline:** Fixed retry for all failed payments (no intelligence)  
 **RecoverFlow AI:** Score → AI decision → Policy gate → Selective action
 
-Metrics reported:
+Metrics reported as synthetic/test-mode results:
 - Revenue recovered (INR)
 - Recovery rate (%)
 - Successful recovery count
@@ -367,7 +383,19 @@ Metrics reported:
 - Stopped cases (AI chose not to intervene)
 - Unnecessary interventions avoided
 
-Results are computed from real seeded data — not hardcoded.
+Results are computed from real seeded synthetic data — not hardcoded — and do not represent production revenue recovered.
+
+## Current Demo Status
+
+- Gemini 3.8 Flash connected and verified
+- Structured AI decision verified
+- Policy engine verified
+- Policy blocking verified
+- Audit trail verified
+- Frontend build passing
+- Razorpay Test/Mock provider supported
+- No live/production payments used
+- Evaluation uses synthetic/test data
 
 ---
 
@@ -390,7 +418,7 @@ Results are computed from real seeded data — not hardcoded.
 | Charts | Recharts |
 | Backend | FastAPI 0.115 + Python 3.11 |
 | Database | MongoDB 8 (Motor async driver) |
-| AI | Gemini 1.5 Flash (via OpenAI-compatible SDK) |
+| AI | Gemini 3.8 Flash (via OpenAI-compatible SDK) |
 | Payments | Razorpay Test Mode |
 | Container | Docker + Docker Compose |
 
